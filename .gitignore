@@ -1,0 +1,99 @@
+# ==============================================================================
+# Smart Agriculture DSS - .gitignore
+# Theo dung SDS_DSS_Agriculture.md - Section 8 & 11
+# ==============================================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ---- Virtual Environment ----
+venv/
+env/
+ENV/
+.venv/
+
+# ---- Secrets / Environment Variables ----
+# Khong commit .env (chua thong tin nhay cam). Chi commit .env.example
+.env
+.env.local
+.env.*.local
+
+# ---- Data (quan ly boi DVC, khong commit truc tiep) ----
+data/raw/*
+data/processed/*
+data/external/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+
+# ---- Models (weights/checkpoints qua lon cho Git) ----
+models/*
+!models/.gitkeep
+*.pth
+*.onnx
+*.h5
+*.pkl
+
+# ---- Logs ----
+logs/api/*
+logs/system/*
+!logs/api/.gitkeep
+!logs/system/.gitkeep
+*.log
+
+# ---- MLflow ----
+mlruns/
+mlartifacts/
+
+# ---- DVC ----
+.dvc/cache
+.dvc/tmp
+
+# ---- Jupyter Notebook ----
+.ipynb_checkpoints/
+
+# ---- IDE ----
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Testing / Coverage ----
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.tox/
+
+# ---- Docker ----
+*.env.docker
+
+# ---- Database ----
+*.sqlite3
+*.db
