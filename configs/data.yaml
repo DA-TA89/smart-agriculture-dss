@@ -1,0 +1,20 @@
+dataset:
+  kaggle_handle: "abdallahalidev/plantvillage-dataset"
+  # Optional: some Kaggle archives nest multiple image variants
+  # (e.g. "color", "grayscale", "segmented"). Set this to the exact
+  # subfolder name to use only one variant. Leave null to use the
+  # dataset root as-is.
+  dataset_subfolder: "color"
+  allowed_extensions: [".jpg", ".jpeg", ".png"]
+  min_file_size_bytes: 100
+  duplicate_hash_algorithm: "md5"
+  class_separator: "___"
+  healthy_keyword: "healthy"
+
+metadata:
+  output_filename: "metadata.csv"
+  clean_output_filename: "metadata_clean.csv"
+
+validation:
+  report_filename: "data_validation_report.md"
+  sample_corrupt_log_limit: 20

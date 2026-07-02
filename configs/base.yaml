@@ -1,0 +1,12 @@
+project:
+  name: smart-agriculture-dss
+  root_dir: .
+
+paths:
+  data_raw_dir: data/raw
+  data_processed_dir: data/processed
+  data_external_dir: data/external
+  docs_data_dictionary_dir: docs/data_dictionary
+  logs_system_dir: logs/system
+  logs_api_dir: logs/api
+  models_dir: models
