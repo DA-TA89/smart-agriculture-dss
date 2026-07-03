@@ -1,9 +1,5 @@
 dataset:
   kaggle_handle: "abdallahalidev/plantvillage-dataset"
-  # Optional: some Kaggle archives nest multiple image variants
-  # (e.g. "color", "grayscale", "segmented"). Set this to the exact
-  # subfolder name to use only one variant. Leave null to use the
-  # dataset root as-is.
   dataset_subfolder: "color"
   allowed_extensions: [".jpg", ".jpeg", ".png"]
   min_file_size_bytes: 100
@@ -18,3 +14,14 @@ metadata:
 validation:
   report_filename: "data_validation_report.md"
   sample_corrupt_log_limit: 20
+
+# ---- Phase 4: Exploratory Data Analysis ----
+eda:
+  report_filename: "eda_report.md"
+  class_distribution_filename: "class-distribution.csv"
+  plant_type_distribution_filename: "plant-type-distribution.csv"
+  image_dimension_stats_filename: "image-dimension-stats.csv"
+  missing_analysis_filename: "missing-analysis.csv"
+  # Ngưỡng tỷ lệ (max_count / min_count) để đánh dấu dataset là mất cân bằng
+  # trong eda_report.md. Phase 3 đã phát hiện ~36x nên để 10.0 là ngưỡng an toàn.
+  imbalance_warning_threshold: 10.0
