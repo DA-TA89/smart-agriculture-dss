@@ -1,0 +1,11 @@
+training:
+  device: "cuda"
+  num_epochs: 40                 # tăng từ 3 (chạy thử) lên 40 — early stopping sẽ dừng sớm nếu không cải thiện
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"
+  loss_function: "cross_entropy"
+  use_amp: true
+  early_stopping_patience: 5     # tăng từ 3 lên 5 — cho model đủ "kiên nhẫn" vượt qua dao động như ViT đã thấy ở lần chạy thử
+  log_interval_batches: 50
+  checkpoint_dir: "models"
