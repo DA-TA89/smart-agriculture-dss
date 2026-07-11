@@ -1,0 +1,31 @@
+# ==============================================================================
+# configs/evaluation.yaml
+# Cau hinh rieng cho Phase 7 - Model Evaluation & Experiment Tracking.
+# Tuyet doi khong hard-code cac gia tri nay trong source code (SDS Section 8).
+#
+# Luu y: nguong canh bao cỡ mau nho (min_samples_per_class_warning) KHONG
+# duoc lap lai o day - evaluate_pipeline.py doc lai truc tiep tu
+# configs/data.yaml -> split.min_samples_per_class_warning (da dinh nghia tu
+# Phase 5) de tranh Duplicate Code / Magic Number theo SDS Section 9.
+# ==============================================================================
+
+metrics:
+  # Trung binh dung cho precision/recall/f1 - macro vi imbalance 36.23x (Phase 4/5)
+  classification_average: "macro"
+  roc_auc_multi_class: "ovr"
+  roc_auc_average: "macro"
+
+inference_speed:
+  # So batch chay thu truoc khong tinh gio (warm-up), roi moi do thoi gian that
+  num_warmup_batches: 5
+  num_timed_batches: 20
+
+report:
+  evaluation_report_filename_template: "evaluation_report_{model_key}.md"
+  comparison_report_filename: "model_comparison_report.md"
+  confusion_matrix_filename_template: "confusion-matrix-{model_key}.png"
+
+mlflow:
+  # Local file-based tracking - khong can chay mlflow server rieng
+  tracking_uri: "file:./mlruns"
+  experiment_name: "plantvillage-model-evaluation"

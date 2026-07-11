@@ -7,6 +7,7 @@ paths:
   data_processed_dir: data/processed
   data_external_dir: data/external
   docs_data_dictionary_dir: docs/data_dictionary
+  docs_evaluation_dir: docs/evaluation
   logs_system_dir: logs/system
   logs_api_dir: logs/api
   models_dir: models
