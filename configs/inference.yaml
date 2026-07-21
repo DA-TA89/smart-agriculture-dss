@@ -1,0 +1,11 @@
+inference:
+  # Model dùng mặc định khi không truyền model_key — efficientnet_b0 thắng ở Phase 7
+  # (macro-F1 0.9656 vs 0.9216, nhanh hơn, nhẹ hơn). Vẫn hỗ trợ chọn "vit" qua tham số/config
+  # theo nguyên tắc Scalability (SDS Section 2).
+  default_model_key: "efficientnet"
+  supported_model_keys: ["efficientnet", "vit"]
+  top_k: 3
+  # Khi image_path là 1 thư mục và KHÔNG truyền --random/--limit: nếu số ảnh tìm được
+  # vượt ngưỡng này, CLI sẽ hỏi xác nhận (y/N) trước khi xử lý toàn bộ — không tự động
+  # cắt bớt (CLI không tự quyết định thay người dùng).
+  batch_confirm_threshold: 10

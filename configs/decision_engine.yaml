@@ -1,0 +1,38 @@
+knowledge_base:
+  file_path: "src/decision_engine/knowledge_base/disease_kb.json"
+
+# Ngưỡng phân loại confidence_score — GIÁ TRỊ HEURISTIC, chưa qua calibration.
+# Future Improvement (ngoài phạm vi Phase 8 — không phải yêu cầu bắt buộc của logic
+# hiện tại): confidence thô từ softmax không phải xác suất đã calibrate (mạng nơ-ron
+# huấn luyện bằng cross-entropy/softmax thường overconfident). Trước khi dùng ngưỡng
+# này cho quyết định thật, nên xác thực lại bằng Reliability Diagram / Expected
+# Calibration Error (ECE) hoặc Temperature Scaling trên tập test (Phase 7) — xem thêm
+# PHASE8_LOG.md, mục "Future Work".
+confidence_thresholds:
+  high: 0.85
+  medium: 0.60
+  # < medium => "low"
+
+# verification_status chỉ phản ánh mức độ tin cậy của model — KHÔNG liên quan gì tới
+# severity/priority. Việc kết hợp priority + verification_status để hiển thị cảnh báo
+# cho người dùng thuộc về Dashboard/API (Phase 9/10), không xử lý ở đây.
+verification:
+  confidence_tier_required: "high"
+  verified_label: "Verified"
+  needs_verification_label: "Need Verification"
+
+# Priority phản ánh THUẦN mức độ nghiêm trọng của bệnh (lấy trực tiếp từ
+# severity_level trong Knowledge Base) — không bị confidence_score làm thay đổi.
+priority:
+  # Thứ tự tham khảo cho hiển thị/sắp xếp ở Phase 9/10 (vd. tô màu badge, sort danh
+  # sách cảnh báo). KHÔNG dùng để tính toán trong decision_engine.
+  order: ["No Action Required", "Low", "Medium", "High", "Critical"]
+  # Nhãn priority riêng cho lớp khỏe mạnh — CỐ Ý không map về "Low": "khỏe mạnh,
+  # không cần hành động" khác về bản chất với "có bệnh nhưng ưu tiên thấp".
+  healthy_label: "No Action Required"
+
+report:
+  save_dir: "docs/decision_engine/sample_reports"
+  # Có cả {image_stem} để khi chạy batch nhiều ảnh ra cùng 1 class dự đoán vẫn không bị
+  # ghi đè lên nhau (trước đây chỉ có {class_name}, sẽ trùng file nếu batch >1 ảnh cùng class).
+  filename_template: "decision_report_{image_stem}_{class_name}.md"
