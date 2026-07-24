@@ -1,0 +1,27 @@
+api:
+  title: "Smart Agriculture DSS API"
+  description: >
+    REST API for plant disease detection and decision support -
+    Smart Agriculture Decision Support System (Deep Learning & Vision Transformer).
+  version: "1.0.0"
+  host: "0.0.0.0"
+  port: 8000
+  # Danh sách origin được phép gọi API từ trình duyệt (CORS). "*" phù hợp cho
+  # môi trường development / portfolio demo. Khi triển khai thật (Phase 11),
+  # nên thu hẹp lại thành domain cụ thể của Dashboard.
+  cors_allow_origins: ["*"]
+
+upload:
+  # Thư mục lưu file tạm khi nhận multipart upload. null = dùng thư mục temp
+  # mặc định của hệ điều hành (qua tempfile.NamedTemporaryFile). File luôn bị
+  # xóa ngay sau khi xử lý xong dù thành công hay lỗi - ảnh KHÔNG được lưu
+  # vĩnh viễn (quyết định đã chốt đầu Phase 9, khớp đúng thiết kế sẵn có của
+  # decision_report_builder.py: "the image itself is not stored in the report").
+  temp_dir: null
+  max_file_size_mb: 10
+  # Danh sách phần mở rộng hợp lệ TÁI SỬ DỤNG từ configs/data.yaml ->
+  # dataset.allowed_extensions - không định nghĩa lại (SDS: không Duplicate Code).
+
+pagination:
+  default_page_size: 20
+  max_page_size: 100
