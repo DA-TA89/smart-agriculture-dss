@@ -1,0 +1,38 @@
+dashboard:
+  page_title: "Smart Agriculture DSS"
+  page_icon: "🌿"
+
+api_client:
+  # Ghi đè base URL client nếu cần trỏ Dashboard tới một API khác (vd. API
+  # chạy trên máy/container khác với Dashboard). Để null để tự build từ
+  # configs/api.yaml -> api.host/api.port - trong trường hợp đó, host
+  # "0.0.0.0" (bind-all, đúng cho phía server) sẽ tự động được map sang
+  # "localhost" cho phía client (client không bao giờ connect được tới
+  # 0.0.0.0 như một địa chỉ đích).
+  base_url_override: null
+  request_timeout_seconds: 15
+
+cache:
+  # TTL cache (giây) cho dữ liệu History/Analytics lấy từ API. Cần thiết vì
+  # Streamlit chạy lại (rerun) toàn bộ script mỗi khi người dùng tương tác
+  # UI - không cache sẽ gọi API lặp lại liên tục không cần thiết.
+  ttl_seconds: 30
+
+analytics:
+  # Giới hạn an toàn số bản ghi tối đa Dashboard tải về (vòng lặp phân trang
+  # qua GET /api/v1/predictions, không có endpoint /stats riêng - xem quyết
+  # định đầu Phase 10) để tổng hợp biểu đồ Analytics. Nếu tổng số bản ghi
+  # thật vượt ngưỡng này, Dashboard hiển thị cảnh báo "dữ liệu đã bị cắt
+  # bớt" thay vì tải vô hạn/treo UI.
+  max_records_fetch: 5000
+  top_classes_limit: 10
+
+upload:
+  # Giới hạn CỨNG (chặn hẳn, không cho xử lý) số ảnh tối đa cho 1 lần Batch
+  # Prediction qua Dashboard. Khác mục đích với configs/inference.yaml ->
+  # batch_confirm_threshold (chỉ hỏi xác nhận y/N, không chặn) - dùng cho
+  # CLI decision_pipeline.py (Phase 8). Batch qua Dashboard nhắm vào quy mô
+  # chục-vài trăm ảnh (kiểm thử/demo/sàng lọc nông trại) - KHÔNG phải công
+  # cụ cho việc quét cả dataset (54k+ ảnh); dùng CLI --random/--limit cho
+  # quy mô đó thay thế.
+  batch_max_files: 100
