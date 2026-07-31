@@ -83,6 +83,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Docker/OCI registry (ghcr.io) BẮT BUỘC tên repository viết thường,
+      # nhưng GitHub Actions expression syntax (${{ }}) KHÔNG có sẵn hàm
+      # lowercase - đây là hạn chế đã biết của GitHub Actions (không phải
+      # thiếu sót cấu hình), owner "DA-TA89" có chữ hoa gây lỗi thật ở lần
+      # chạy CI đầu tiên: "repository name must be lowercase". Dùng cú pháp
+      # lowercase có sẵn của bash (${VAR,,}) trong 1 step riêng, output ra
+      # cho các step build dùng lại.
+      - name: Compute lowercase registry owner
+        id: owner
+        run: echo "lowercase=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
       # ⚠️ QUAN TRỌNG - khắc phục xung đột giữa 2 quyết định thiết kế:
       # (1) models/*.pth và data/processed/class_to_idx.json bị .gitignore
       #     (Phase 5/6, đúng thiết kế - không commit binary/generated file).
@@ -112,8 +123,8 @@ jobs:
           file: deployment/docker/Dockerfile.api
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-api:latest
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-api:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.owner.outputs.lowercase }}/smart-agriculture-dss-api:latest
+            ${{ env.REGISTRY }}/${{ steps.owner.outputs.lowercase }}/smart-agriculture-dss-api:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -124,7 +135,7 @@ jobs:
           file: deployment/docker/Dockerfile.dashboard
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-dashboard:latest
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-dashboard:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.owner.outputs.lowercase }}/smart-agriculture-dss-dashboard:latest
+            ${{ env.REGISTRY }}/${{ steps.owner.outputs.lowercase }}/smart-agriculture-dss-dashboard:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
