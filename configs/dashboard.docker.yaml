@@ -1,0 +1,37 @@
+# ==============================================================================
+# configs/dashboard.docker.yaml - Biến thể của configs/dashboard.yaml (Phase 10)
+# CHỈ dùng khi build Dockerfile.dashboard (Phase 11) - xem ghi chú cuối file.
+# ==============================================================================
+# KHÔNG chỉnh sửa configs/dashboard.yaml gốc để tránh ảnh hưởng flow chạy dev
+# ngoài Docker (uvicorn + streamlit run 2 process độc lập trên Windows, đã
+# verify hoạt động ở Phase 10). File này là bản sao gần như nguyên vẹn, CHỈ
+# khác đúng 1 giá trị: api_client.base_url_override.
+#
+# Lý do bắt buộc dùng file riêng thay vì biến môi trường: xem
+# dashboard/api_client.py -> get_api_base_url() - đọc thẳng
+# load_config("dashboard")["api_client"]["base_url_override"] từ YAML, hàm
+# này KHÔNG đọc bất kỳ biến môi trường nào. Dockerfile.dashboard sẽ COPY đè
+# file này lên configs/dashboard.yaml bên trong image (xem COPY cuối
+# Dockerfile.dashboard) - áp dụng đúng nguyên tắc Configurability (SDS
+# Section 2/8: tham số động qua config, không hard-code) mà không cần sửa
+# code Phase 9/10 đã verify hoạt động.
+dashboard:
+  page_title: "Smart Agriculture DSS"
+  page_icon: "🌿"
+
+api_client:
+  # "api" = tên service trong docker-compose.yml, DNS nội bộ Docker Compose
+  # tự phân giải sang đúng IP container - khác "localhost" dùng khi chạy 2
+  # process độc lập ngoài Docker (Phase 10).
+  base_url_override: "http://api:8000"
+  request_timeout_seconds: 15
+
+cache:
+  ttl_seconds: 30
+
+analytics:
+  max_records_fetch: 5000
+  top_classes_limit: 10
+
+upload:
+  batch_max_files: 100

@@ -1,0 +1,130 @@
+# ==============================================================================
+# Smart Agriculture DSS - CI/CD Pipeline
+# Phase 11 - MLOps & Deployment
+# ==============================================================================
+# Quyết định phạm vi đã chốt qua trao đổi trước khi code:
+# - tests/ TRƯỚC Phase 11 hoàn toàn rỗng (từ Phase 2) -> Phase 11 bổ sung vài
+#   Unit Test cơ bản cho src/decision_engine/ (module thuần logic, dễ test,
+#   không phụ thuộc GPU/DB/network) - xem tests/unit/.
+# - black/flake8 chạy NGHIÊM NGẶT (fail build) CHỈ trên thư mục tests/ (code
+#   mới của Phase 11). Trên phần code cũ (src/, api/, pipelines/ - viết từ
+#   Phase 3-10, CHƯA từng chạy qua black/flake8 lần nào) chỉ chạy dạng THAM
+#   KHẢO (continue-on-error) để không làm CI đỏ ngay từ lần đầu bật vì nợ kỹ
+#   thuật cũ, nhưng vẫn hiển thị cảnh báo trong log Actions để biết còn gì cần
+#   dọn. Đây là quyết định của Claude khi soạn Phase 11, CHƯA được người dùng
+#   xác nhận trực tiếp - có thể điều chỉnh nếu muốn nghiêm ngặt hơn/khác đi.
+# - Build & push Docker image lên GHCR CHỈ khi push vào nhánh "master" (không
+#   build/push cho pull_request, tránh tốn quota vô ích).
+# ==============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  lint-and-test:
+    name: Lint & Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint tests/ (strict - fails build)
+        run: |
+          black --check tests
+          flake8 tests
+
+      - name: Lint src/ api/ pipelines/ (informational only - legacy code, not yet formatted)
+        continue-on-error: true
+        run: |
+          black --check src api pipelines
+          flake8 src api pipelines
+
+      - name: Run unit tests
+        run: pytest tests/unit --cov=src/decision_engine --cov-report=term-missing -v
+
+  build-and-push:
+    name: Build & Push Docker Images
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ⚠️ QUAN TRỌNG - khắc phục xung đột giữa 2 quyết định thiết kế:
+      # (1) models/*.pth và data/processed/class_to_idx.json bị .gitignore
+      #     (Phase 5/6, đúng thiết kế - không commit binary/generated file).
+      # (2) Dockerfile.api COPY trực tiếp các file này từ local filesystem.
+      # Trên máy cá nhân, (2) hoạt động vì file có sẵn trên đĩa dù không nằm
+      # trong Git. Nhưng GitHub Actions runner chỉ có đúng những gì
+      # `actions/checkout` lấy về TỪ GIT - tức là KHÔNG có các file này, nên
+      # bước build ở dưới sẽ crash nếu thiếu bước tải này.
+      # Giải pháp: tải 3 file (2 checkpoint + class_to_idx.json) từ GitHub
+      # Release công khai của repo (đã tạo sẵn 1 lần thủ công - xem
+      # docs/user_guide/deployment_guide.md mục "Chuẩn bị GitHub Release cho
+      # model checkpoint"). Repo Public nên không cần token để tải asset.
+      - name: Download model checkpoints & class_to_idx.json from GitHub Release
+        env:
+          RELEASE_TAG: models-v1
+        run: |
+          mkdir -p models data/processed
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}"
+          curl -fL -o models/efficientnet_b0_plantvillage_f1_0.97.pth "${BASE_URL}/efficientnet_b0_plantvillage_f1_0.97.pth"
+          curl -fL -o models/vit_tiny_plantvillage_f1_0.92.pth "${BASE_URL}/vit_tiny_plantvillage_f1_0.92.pth"
+          curl -fL -o data/processed/class_to_idx.json "${BASE_URL}/class_to_idx.json"
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deployment/docker/Dockerfile.api
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-api:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push Dashboard image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deployment/docker/Dockerfile.dashboard
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-dashboard:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/smart-agriculture-dss-dashboard:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

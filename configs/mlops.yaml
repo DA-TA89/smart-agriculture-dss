@@ -1,0 +1,24 @@
+# ==============================================================================
+# configs/mlops.yaml - MLflow Model Registry (Phase 11)
+# ==============================================================================
+# Tách riêng khỏi configs/evaluation.yaml (Phase 7) dù cùng dùng MLflow, vì
+# khác phạm vi: evaluation.yaml -> mlflow.* chỉ phục vụ Experiment Tracking
+# (log metrics/params/artifacts lúc train/eval). File này phục vụ Model
+# Registry (đăng ký version model, promote lên "production") - đúng ranh
+# giới đã ghi chú trong Phase_DSS_Agriculture.md / PHASE7_LOG.md.
+# ==============================================================================
+
+mlflow:
+  tracking_uri: "file:./mlruns"
+  registry_model_name: "plantvillage-disease-classifier"
+  # Dùng MLflow Alias API (hiện đại, thay thế Stage Staging/Production đã
+  # deprecated từ MLflow 2.9.0) - đã verify trực tiếp bằng cách cài thử
+  # mlflow==2.18.0 và kiểm tra MlflowClient.set_registered_model_alias() có
+  # tồn tại thật (không đoán theo tài liệu cũ).
+  production_alias: "production"
+
+promotion:
+  # Model được promote lên Production - quyết định đã chốt ở đầu Phase 11:
+  # efficientnet_b0 thắng mọi tiêu chí ở Phase 7 (macro-F1 0.9656 vs 0.9216,
+  # nhanh hơn, nhẹ hơn - xem PHASE7_LOG.md mục 5.1).
+  model_key: "efficientnet"

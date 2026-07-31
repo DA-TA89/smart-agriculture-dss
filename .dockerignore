@@ -1,0 +1,90 @@
+# ==============================================================================
+# Smart Agriculture DSS - .dockerignore
+# Phase 11 - MLOps & Deployment
+# ==============================================================================
+# ⚠️ KHÁC VỚI .gitignore Ở 1 ĐIỂM QUAN TRỌNG: .gitignore loại trừ *.pth,
+# models/*, data/processed/* để không commit lên Git (đúng thiết kế, các file
+# này quá lớn/tự sinh). Nhưng Dockerfile.api CẦN COPY models/*.pth và
+# data/processed/class_to_idx.json thật vào image (quyết định đã chốt: COPY
+# trực tiếp, không qua DVC) - nên .dockerignore CỐ Ý KHÔNG ignore các đường
+# dẫn đó. Đây không phải thiếu sót, là khác biệt có chủ đích giữa 2 file.
+# ==============================================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ---- Virtual Environment ----
+venv/
+env/
+ENV/
+.venv/
+
+# ---- Secrets (không bao giờ đưa vào build context) ----
+.env
+.env.docker
+.env.local
+.env.*.local
+
+# ---- Git / GitHub ----
+.git/
+.github/
+
+# ---- Dataset thô - RẤT LỚN (54,305 ảnh, Phase 3), API/Dashboard không cần ----
+data/raw/
+data/external/
+# CHỈ giữ lại data/processed/class_to_idx.json (không ignore file này) -
+# nhưng phải ignore các CSV split lớn (metadata*.csv, hàng chục nghìn dòng),
+# không cần thiết cho runtime inference.
+data/processed/metadata*.csv
+
+# ---- Notebook / EDA - không cần cho runtime ----
+notebooks/
+.ipynb_checkpoints/
+
+# ---- Docs - không cần cho runtime image ----
+docs/
+
+# ---- Logs / MLflow / DVC cache - tự sinh, không cần baked vào image ----
+logs/
+mlruns/
+mlartifacts/
+.dvc/cache
+.dvc/tmp
+
+# ---- Tests - không cần trong image runtime (chỉ chạy trong CI) ----
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# ---- IDE / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# ---- Deployment tự tham chiếu (tránh COPY đệ quy vô nghĩa) ----
+deployment/nginx/

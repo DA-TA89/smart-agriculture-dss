@@ -1,0 +1,73 @@
+# ==============================================================================
+# Smart Agriculture DSS - docker-compose.yml
+# Phase 11 - MLOps & Deployment
+# ==============================================================================
+# Mục tiêu: demo local, KHÔNG deploy cloud thật (quyết định đã chốt).
+# Chạy: docker-compose up --build
+# API:       http://localhost:8000/docs
+# Dashboard: http://localhost:8501
+#
+# Yêu cầu: file .env.docker ở project root (copy từ .env.docker.example,
+# xem file đó để biết danh sách biến cần điền).
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sadss-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.api
+    container_name: sadss-api
+    restart: unless-stopped
+    environment:
+      # DB_HOST = tên service Postgres TRONG mạng Docker nội bộ (không phải
+      # "localhost" như .env.example dùng cho dev ngoài Docker) - đây là
+      # điểm khác biệt duy nhất so với .env.docker.example, xem file đó.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      API_SECRET_KEY: ${API_SECRET_KEY}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.dashboard
+    container_name: sadss-dashboard
+    restart: unless-stopped
+    # Không cần "environment:" cho API URL - đã bake sẵn vào image lúc build
+    # qua configs/dashboard.docker.yaml (xem Dockerfile.dashboard), vì
+    # dashboard/api_client.py đọc giá trị này từ file YAML, không từ env var.
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

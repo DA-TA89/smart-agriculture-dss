@@ -1,0 +1,76 @@
+# ==============================================================================
+# Smart Agriculture DSS - Dockerfile.api
+# Phase 11 - MLOps & Deployment
+# ==============================================================================
+# Build context PHẢI là project root (không phải deployment/docker/), vì cần
+# COPY nhiều thư mục ở root (api/, src/, pipelines/, configs/, models/, ...).
+# Lệnh build đúng (từ project root):
+#   docker build -f deployment/docker/Dockerfile.api -t smart-agriculture-dss-api .
+# Trong docker-compose.yml, context đã được set = "." (root) nên không cần lo.
+#
+# Quyết định thiết kế (đã chốt qua trao đổi trước khi code, không giả định):
+# - CPU-only: KHÔNG cài torch CUDA. Container chỉ phục vụ inference bằng
+#   checkpoint đã train sẵn từ Phase 6 (freeze-backbone, linear probing nên
+#   inference không nặng) - không train lại trong container.
+# - COPY nguyên thư mục (không cherry-pick từng file) để
+#   src/config/config_loader.py -> get_project_root() (tự dò thư mục cha chứa
+#   configs/, xem PHASE3_LOG.md mục 8) hoạt động giống hệt như chạy local,
+#   không cần biết chi tiết từng import bên trong pipelines/decision_pipeline.py.
+# ==============================================================================
+
+FROM python:3.13-slim AS base
+
+WORKDIR /app
+
+# libgl1/libglib2.0-0: opencv-python (trong requirements.txt) cần libGL.so.1
+# lúc import, dù API runtime có thể không trực tiếp import cv2 - cài phòng hờ
+# để tránh lỗi import chain không lường trước, chi phí thêm dung lượng nhỏ.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Cài dependency ----
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# PyTorch CPU-only - KHÔNG dùng index-url cu124 (đó là bản GPU dùng ở Phase 2
+# cho máy dev). Bản CPU nhẹ hơn nhiều, đủ cho inference với model đã freeze
+# backbone (EfficientNet-B0 15.77MB / ViT-Tiny 21.16MB, số liệu Phase 7).
+RUN pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# ---- Copy source code (đúng cấu trúc SDS Section 4/10) ----
+COPY api/ ./api/
+COPY pipelines/ ./pipelines/
+COPY src/ ./src/
+COPY configs/ ./configs/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+
+# ---- Model checkpoints ----
+# Quyết định đã chốt: COPY trực tiếp file .pth có sẵn trên máy vào image lúc
+# build (không qua DVC). Các file này bị .gitignore (Phase 6) nên KHÔNG có
+# trong Git, nhưng docker build context đọc thẳng từ filesystem, không phụ
+# thuộc .gitignore - .dockerignore (xem file cùng cấp) đã loại trừ *.pth khỏi
+# danh sách ignore để dòng COPY dưới đây hoạt động đúng.
+# api/main.py (lifespan) preload CẢ 2 model (efficientnet + vit) - xem
+# configs/inference.yaml -> supported_model_keys - nên cần cả 2 checkpoint.
+COPY models/ ./models/
+
+# ---- Metadata cần cho inference (mapping class index -> class name) ----
+# Chỉ copy đúng 1 file, KHÔNG copy toàn bộ data/processed/ (các CSV split
+# train/val/test hàng chục nghìn dòng không cần thiết cho runtime API).
+COPY data/processed/class_to_idx.json ./data/processed/class_to_idx.json
+
+# ---- Thư mục log (rỗng, sinh tự động lúc chạy - xem PHASE3_LOG.md logger) ----
+RUN mkdir -p logs/system logs/api
+
+# ---- Entrypoint: chờ DB sẵn sàng -> chạy Alembic migration -> start uvicorn ----
+COPY deployment/docker/entrypoint-api.sh /app/entrypoint-api.sh
+RUN chmod +x /app/entrypoint-api.sh
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/entrypoint-api.sh"]

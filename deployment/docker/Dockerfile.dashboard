@@ -1,0 +1,52 @@
+# ==============================================================================
+# Smart Agriculture DSS - Dockerfile.dashboard
+# Phase 11 - MLOps & Deployment
+# ==============================================================================
+# Build context PHẢI là project root, giống Dockerfile.api. Lệnh build đúng:
+#   docker build -f deployment/docker/Dockerfile.dashboard -t smart-agriculture-dss-dashboard .
+#
+# Dashboard KHÔNG cần torch/timm/opencv (chỉ gọi API qua HTTP - đúng Layered
+# Architecture, SDS Section 3 & quyết định Phase 10 mục 2.1). Cài nguyên
+# requirements.txt cho đơn giản/nhất quán (dùng chung 1 file requirements duy
+# nhất của cả dự án, không tạo requirements-dashboard.txt riêng) dù dư một số
+# thư viện AI/DB không dùng tới - đổi lại image build nhanh hơn Dockerfile.api
+# vì KHÔNG cài torch.
+# ==============================================================================
+
+FROM python:3.13-slim AS base
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# ---- Source code Dashboard ----
+# src/ CẦN THIẾT dù Dashboard không gọi thẳng AI/Business layer (chỉ gọi API
+# qua HTTP, đúng Layered Architecture) - vì dashboard/api_client.py dùng
+# src.config.config_loader.load_config() làm tiện ích đọc configs/*.yaml.
+# Đây là utility đọc YAML thuần (không import torch/timm/cv2), nên an toàn
+# khi copy vào image này dù KHÔNG cài torch (phát hiện thật từ lần chạy
+# docker-compose đầu tiên: thiếu src/ gây "ModuleNotFoundError: No module
+# named 'src'" ngay ở trang Home - xem PHASE11_LOG.md).
+COPY src/ ./src/
+COPY dashboard/ ./dashboard/
+COPY configs/ ./configs/
+COPY .streamlit/ ./.streamlit/
+
+# ---- Trỏ Dashboard tới API bên trong mạng Docker nội bộ ----
+# Đã xem trực tiếp dashboard/api_client.py -> get_api_base_url(): hàm này
+# đọc load_config("dashboard")["api_client"]["base_url_override"] từ FILE
+# YAML (KHÔNG đọc biến môi trường) - nên COPY đè file cấu hình là cách đúng
+# duy nhất, không dùng ENV. Xem configs/dashboard.docker.yaml để biết lý do
+# không sửa trực tiếp configs/dashboard.yaml gốc.
+COPY configs/dashboard.docker.yaml ./configs/dashboard.yaml
+
+# Phòng ngừa: nếu dashboard/pages/*.py hoặc components/*.py có dùng
+# src.utils.logger.setup_logger() (ghi ra logs/system/), thư mục cần tồn
+# tại sẵn - tránh lỗi tương tự lần thiếu src/ đã gặp.
+RUN mkdir -p logs/system logs/api
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
