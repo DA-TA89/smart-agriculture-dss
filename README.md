@@ -208,24 +208,6 @@ Tens of thousands of RGB leaf images covering multiple crop species, multiple di
 
 ---
 
-## 🗺️ Project Roadmap
-
-This project is developed in 11 sequential phases, following a production AI project workflow:
-
-| Phase | Description | Status |
-|---|---|---|
-| 1 | Business Understanding & Project Planning | ✅ Done |
-| 2 | Project Initialization | 🔄 In Progress |
-| 3 | Data Engineering | ⬜ Pending |
-| 4 | Exploratory Data Analysis (EDA) | ⬜ Pending |
-| 5 | Data Preprocessing | ⬜ Pending |
-| 6 | Deep Learning Model Development | ⬜ Pending |
-| 7 | Model Evaluation & Experiment Tracking | ⬜ Pending |
-| 8 | Decision Support System | ⬜ Pending |
-| 9 | REST API & Database | ⬜ Pending |
-| 10 | Dashboard & Analytics | ⬜ Pending |
-| 11 | MLOps & Deployment | ⬜ Pending |
-
 Full roadmap details available in [`docs/`](docs/).
 
 ---
